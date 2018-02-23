@@ -29,7 +29,9 @@
  The above single 'CALL' statement would be the same as running this SQL:
  
     DROP TABLE IF EXISTS info_schem_columns_fk_table_schema;
-    CREATE TABLE info_schem_columns_fk_table_schema SELECT DISTINCT(table_schema) FROM info_schem_columns;
+    CREATE TABLE info_schem_columns_fk_table_schema 
+      SELECT DISTINCT(table_schema) FROM info_schem_columns
+      WHERE table_schema IS NOT NULL;
     ALTER TABLE info_schem_columns_fk_table_schema ADD PRIMARY KEY(table_schema);
 
     ALTER TABLE info_schem_columns 
@@ -84,7 +86,11 @@ DELIMITER $$
     EXECUTE stmt; 
     DEALLOCATE PREPARE stmt;
     
-    SET @query := CONCAT('CREATE TABLE ',@FKtableName,' SELECT DISTINCT(',columnName,') FROM ',tableName);
+    SET @query := CONCAT(
+      'CREATE TABLE ',@FKtableName,
+      ' SELECT DISTINCT(',columnName,') FROM ',tableName,
+      ' WHERE ',columnName,' IS NOT NULL'
+    );
     PREPARE stmt FROM @query; 
     EXECUTE stmt; 
     DEALLOCATE PREPARE stmt; 
