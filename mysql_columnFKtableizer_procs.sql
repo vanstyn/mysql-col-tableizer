@@ -119,3 +119,28 @@ DELIMITER $$
   END $$
 DELIMITER ;
 /* --- */
+
+
+/* --- mysql_columnFKtableizer_untableize  --- */
+DROP PROCEDURE IF EXISTS mysql_columnFKtableizer_untableize;
+DELIMITER $$
+  CREATE PROCEDURE mysql_columnFKtableizer_untableize(IN tableName VARCHAR(64), IN colNamesCSV VARCHAR(1024))
+  BEGIN
+    SET @col1Name       := SUBSTRING_INDEX(colNamesCSV,',',1);
+    SET @FKtableName    := CONCAT(tableName,'_fk_',colNamesCSV);
+    SET @FKtableName    := REPLACE(@FKtableName,',','_');
+    SET @FKtableName    := REPLACE(@FKtableName,'\`','');
+    
+    SET @constraintName := CONCAT(@FKtableName,'_ibfk_1');
+    
+    CALL mysql_columnFKtableizer_DropFK(tableName,@constraintName);
+    
+    SET @query := CONCAT('DROP TABLE IF EXISTS ',@FKtableName);
+    PREPARE stmt FROM @query; 
+    EXECUTE stmt; 
+    DEALLOCATE PREPARE stmt;
+    
+  END $$
+DELIMITER ;
+/* --- */
+
