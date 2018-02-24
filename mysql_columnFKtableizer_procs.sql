@@ -74,9 +74,13 @@ DELIMITER ;
 /* --- mysql_columnFKtableizer_tableize  --- */
 DROP PROCEDURE IF EXISTS mysql_columnFKtableizer_tableize;
 DELIMITER $$
-  CREATE PROCEDURE mysql_columnFKtableizer_tableize(IN tableName VARCHAR(64), IN columnName VARCHAR(64))
+  CREATE PROCEDURE mysql_columnFKtableizer_tableize(IN tableName VARCHAR(64), IN colNamesCSV VARCHAR(1024))
   BEGIN
-    SET @FKtableName    := CONCAT(tableName,'_fk_',columnName);
+    SET @col1Name       := SUBSTRING_INDEX(colNamesCSV,',',1);
+    SET @FKtableName    := CONCAT(tableName,'_fk_',colNamesCSV);
+    SET @FKtableName    := REPLACE(@FKtableName,',','_');
+    SET @FKtableName    := REPLACE(@FKtableName,'\`','');
+    
     SET @constraintName := CONCAT(@FKtableName,'_ibfk_1');
     
     CALL mysql_columnFKtableizer_DropFK(tableName,@constraintName);
@@ -88,14 +92,15 @@ DELIMITER $$
     
     SET @query := CONCAT(
       'CREATE TABLE ',@FKtableName,
-      ' SELECT DISTINCT(',columnName,') FROM ',tableName,
-      ' WHERE ',columnName,' IS NOT NULL'
+      ' SELECT ',colNamesCSV,' FROM ',tableName,
+      ' WHERE ',@col1Name,' IS NOT NULL',
+      ' GROUP BY ',colNamesCSV
     );
     PREPARE stmt FROM @query; 
     EXECUTE stmt; 
     DEALLOCATE PREPARE stmt; 
 
-    SET @query := CONCAT('ALTER TABLE ',@FKtableName,' ADD PRIMARY KEY (',columnName,')');
+    SET @query := CONCAT('ALTER TABLE ',@FKtableName,' ADD PRIMARY KEY (',colNamesCSV,')');
     PREPARE stmt FROM @query; 
     EXECUTE stmt; 
     DEALLOCATE PREPARE stmt; 
@@ -103,8 +108,8 @@ DELIMITER $$
     SET @query := CONCAT(
       'ALTER TABLE `',tableName,'` ',
         'ADD CONSTRAINT `', @constraintName,'` ',
-        'FOREIGN KEY (`', columnName, '`) ',
-        'REFERENCES `',@FKtableName,'` (`',columnName,'`) ',
+        'FOREIGN KEY (', colNamesCSV, ') ',
+        'REFERENCES `',@FKtableName,'` (',colNamesCSV,') ',
         'ON UPDATE CASCADE ON DELETE RESTRICT'
     );
     PREPARE stmt FROM @query; 
