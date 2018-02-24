@@ -43,6 +43,17 @@
 
   ** Note that the procedure is smart enough to be ran over and over, subsequent calls will
      drop the constraint first, which is what the mysql_columnFKtableizer_DropFK proc is for
+  
+
+  This also now works with multi-column PKs:
+  
+    CALL mysql_columnFKtableizer_tableize('info_schem_columns','table_schema,table_name');
+  
+  There is also now an 'untableize' proc to reverse any 'tableize' which was called:
+  
+    CALL mysql_columnFKtableizer_untableize('info_schem_columns','table_schema');
+    CALL mysql_columnFKtableizer_untableize('info_schem_columns','table_schema,table_name');
+  
 */
 
 
